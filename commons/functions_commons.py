@@ -1,43 +1,59 @@
-from pyUFbr.baseuf import ufbr
 import pandas as pd
 import plotly.express as px
 from urllib.request import urlopen
 import json
-from unidecode import unidecode
 
+states_data = {
+    'AC':{
+        'cod':12,
+        'lat':-9.974,
+        'lon':-67.8076
+    },
+    'AM':{
+        'cod':13,
+        'lat':-5.62836,
+        'lon':-63.1835
+    },
+    'RR':{
+        'cod':14,
+        'lat':2.81954,
+        'lon':-60.6714  
+    },
+    'RO' :{
+        'cod':11,
+        'lat':-8.76183,
+        'lon':-63.902 
+    },
+    'PA' :{
+        'cod':15,
+        'lat':-1.45502,
+        'lon':-48.5024 
+    },
+    'AP' :{
+        'cod':16,
+        'lat':-1.45502,
+        'lon':-51.0666 
+    },
+}
 def get_data_from(url):
-     while(True):
-               with urlopen(url) as response:
-                    try:
-                         state_json = json.load(response)
-                         return state_json
-                    except:
-                         continue
-                    
-def get_state_number(state):
-    url = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados'
-    if state == 'BR':
-        return 100
-    else:
-        data = get_data_from(url)
-        for uf in data:
-                if uf['sigla'] == state:
-                    return uf['id']
-        
+        with urlopen(url) as response:
+            state_json=  json.load(response)
+        return state_json
+          
 def import_geoJSON(state):
-    id = get_state_number(state)
-    url = f'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-{id}-mun.json'
     if (state == 'BR'):
             geoJSON  = json.load(open('commons/brazil_geo.json'))
             return geoJSON
+    id = states_data[state]['cod']
+    url = f'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-{id}-mun.json'
     return get_data_from(url)
 
 
 def create_state(df,state):
     if state != 'BR':
         UF = df[df['uf']==state]
-        UF = UF.groupby(["municipio","id"],as_index=False)["id"].value_counts()
-        UF = pd.DataFrame(UF['municipio'].value_counts()).reset_index()
+        UF = UF.groupby(["municipio","id_da_cidade",'id'],as_index=False)["id"].value_counts()
+        UF = pd.DataFrame(UF[['municipio','id_da_cidade']].value_counts()).reset_index()
         UF = UF.sort_values('municipio')
     else:
         UF = df
@@ -47,30 +63,13 @@ def create_state(df,state):
     return UF
 
 
-
-def code_city_df(df,state):
-    number =  get_state_number(state)
-    url = f'https://servicodados.ibge.gov.br/api/v1/localidades/estados/{number}/municipios'
-    data=get_data_from(url)
-    cidades = []
-    for city in data:
-        cidades.append(unidecode(city['nome'].upper()).replace("'",'')) 
-    cities_and_code = {}
-    for city in df['municipio'].unique():
-        city_index = cidades.index(city)
-        cities_and_code[city] = int(data[city_index]['id'])
-    df['id'] = df['municipio'].apply(lambda x: cities_and_code[x])
-    df = df.reset_index()
-    del df['index']
-    df=df.sort_values('count')
-    return df
-
-
-
 def create_map(df,state):
-    locations_key = 'uf' if state == "BR" else 'id'
+    locations_key = 'uf' if state == "BR" else 'id_da_cidade'
     col_key = 'uf' if state == "BR" else 'municipio'
-    show_data = {'count':True,col_key:False} if state == 'BR' else {'id':False,'count':True,col_key:False} 
+    show_data = {'count':True,col_key:False} if state == 'BR' else {'id_da_cidade':False,'count':True,col_key:False} 
+    geo_data =  {'lat':-15.7801, 'lon':-47.9292} if state== 'BR' else {'lat': states_data[state] ['lat'],'lon':states_data[state] ['lon']}
+    title = "Acidentes nos estados brasileiros" if state == 'BR' else f'Acidentes no estado: {state}'
+
     return px.choropleth_mapbox(
                         df, 
                         geojson= import_geoJSON(state), 
@@ -80,11 +79,15 @@ def create_map(df,state):
                         range_color=(df['count'].min(),df['count'].max()),
                         hover_data= show_data,
                         mapbox_style = 'open-street-map',
-                        center = {'lat': -7.11532,'lon':-34.861},
+                        center = geo_data,
                         opacity=0.9,
                         color_continuous_scale='Viridis',
-                        title = f'Acidentes no estado: {state}',
+                        title = title,
                         hover_name= col_key,   
-                        zoom = 6,
+                        zoom = 2 if state == 'BR' else 4,
                         labels={'count':'Quantidade de acidentes '}
                         )
+
+def choropleth_map(df,state):
+     subseted_df = create_state(df,state)
+     return create_map(subseted_df,state)
