@@ -91,3 +91,42 @@ def create_map(df,state):
 def choropleth_map(df,state):
      subseted_df = create_state(df,state)
      return create_map(subseted_df,state)
+
+def subset_df_monthly(df,state):
+    df_month = df
+    if (state=='BR'):
+        df_month['mes'] = pd.to_datetime(df_month['data'],format='mixed').dt.strftime("%m")
+        df_month['mes'] = pd.to_datetime(df_month['data'],format='mixed').dt.strftime("%m")
+        df_month = df_month.groupby(['mes','id','uf'],as_index=False)['id'].value_counts()
+        df_month = df_month['mes'].value_counts().reset_index().sort_values('mes')
+        df_month['mes']=df_month['mes'].astype('int64')
+        df_month['mes_nome'] = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+        return df_month
+    
+    df_month['mes'] = pd.to_datetime(df_month['data'],format='mixed').dt.strftime("%m")
+    df_month = df_month.groupby(['mes','id','uf'],as_index=False)['id'].value_counts()
+    df_month = df_month[['mes','uf']].value_counts().reset_index()
+    df_month = df_month[df_month['uf']==state]
+    df_month = df_month[['mes','count']].sort_values('mes')
+    df_month['mes']=df_month['mes'].astype('int64')
+    df_month['mes_nome'] = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    return df_month
+
+def create_line_chart(df,state):
+    title = f'Acidentes por mês no estado: {state}' if state !='BR' else f'Acidentes por no mês no Brasil: {state}'
+    return px.line(
+            df, 
+            x='mes_nome', 
+            y="count", 
+            hover_data={'count':True,'mes_nome':True},
+            title=title,
+            markers=True,
+            labels={'x':'Meses','count':'Quantidade de acidentes','mes_nome':'Mês'},
+            range_x=[-0.04,11.04]
+            )
+
+def line_chart(df,state):
+    state = state.upper()
+    subseted_df = subset_df_monthly(df,state)
+    return create_line_chart(subseted_df,state)
+
