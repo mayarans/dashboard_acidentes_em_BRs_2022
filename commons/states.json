@@ -4,6 +4,12 @@
     "lat": -15.7801,
     "lon": -47.9292
   },
+  "DF": {
+    "name": "Distrito Federal",
+    "cod": 53,
+    "lat": -15.7801,
+    "lon": -47.9292
+  },
   "AC": {
     "name": "Acre",
     "cod": 12,
