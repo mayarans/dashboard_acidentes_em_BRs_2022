@@ -154,7 +154,7 @@ def scatter_chart(df,state):
 
 
 def subset_df_by_accident(df,state):
-    subseted_df = df[df['uf'] == state] if state != 'BR' else dados
+    subseted_df = df[df['uf'] == state] if state != 'BR' else df
     df = subseted_df.groupby(["municipio", 'id','latitude','longitude','condicao_metereologica','br','fase_dia','classificacao_acidente','causa_acidente','data','km'],as_index=False)["id"].value_counts()
     df['br'] = df['br'].astype(str)
     df['br'] = df['br'].apply(lambda x: x.replace('.0',''))
@@ -184,3 +184,28 @@ def scatter_map(df,state):
     state=state.upper()
     subseted_df = subset_df_by_accident(df,state)
     return create_scatter_map(subseted_df,state)
+
+def subset_df_by_cause_of__accident_and_climate_conditions(df,state,list_of_causes):
+    subset_df = df[df['uf']==state] if state!='BR' else df
+    subset_df = subset_df.groupby(['causa_acidente','condicao_metereologica'],as_index=False)['id'].value_counts()
+    subset_df = pd.DataFrame(subset_df[['causa_acidente','condicao_metereologica']]).value_counts().reset_index()
+    subset_df = subset_df[subset_df['causa_acidente'].isin(list_of_causes)]
+    subset_df = subset_df.sort_values(['count','condicao_metereologica'])
+    return subset_df
+
+def create_bar_chart(df,state):
+    return px.bar(
+        df,
+        x='count',
+        y='condicao_metereologica',
+        color = 'causa_acidente',
+        log_x=True,
+        orientation='h',
+        text='count',
+        color_discrete_sequence= px.colors.qualitative.Prism,
+    )
+
+def bar_chart(df,state,list_of_causes):
+    state = state.upper()
+    subseted_df = subset_df_by_cause_of__accident_and_climate_conditions(df,state,list_of_causes)
+    return create_bar_chart(subseted_df,state)
