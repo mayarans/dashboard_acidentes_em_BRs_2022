@@ -234,3 +234,11 @@ def bar_chart(df, state, list_of_causes):
     subseted_df = subset_df_by_cause_of__accident_and_climate_conditions(
         df, state, list_of_causes)
     return create_bar_chart(subseted_df, state)
+
+def get_accidents_causes_array(df,state):
+    subset_df =df[df['uf']==state] if state!='BR' else df
+    subset_df = subset_df.groupby(['causa_acidente','condicao_metereologica'],as_index=False)['id'].value_counts()
+    subset_df = pd.DataFrame(subset_df[['causa_acidente','condicao_metereologica']]).value_counts().reset_index()
+    final_df = subset_df.sort_values('count',ascending=False)
+    final_df = final_df.head(3)
+    return final_df['causa_acidente'].unique()
