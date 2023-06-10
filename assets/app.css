@@ -14,13 +14,13 @@ body {
 
 .container {
   display: flex;
-  gap: 80px;
+  gap: 60px;
   align-items: center;
   justify-content: center;
 }
 
 .dropdown {
-  margin-left: 50px;
+  margin-left: 60px;
   width: 300px;
 }
 
@@ -36,26 +36,13 @@ body {
 
 .dropdown-state-graph {
   display: flex;
-  /* margin-left: 50px; */
-  /* width: 300px; */
-  /* padding-bottom: 20px; */
-  gap: 100px;
-}
-
-#input-select-cause {
-  /* position: relative; */
-  /* display: inline; */
-  white-space: nowrap;
-  /* overflow: hidden; */
+  gap: 75px;
 }
 
 #select_cause {
-  /* position: absolute; */
-  /* overflow-x: scroll;
-  overflow-y: scroll; */
-  /* max-height: 150px; */
   max-width: 500px;
   margin-left: 750px;
+  border-radius: 4px;
 }
 
 #select-graph {
@@ -63,12 +50,13 @@ body {
   gap: 10px;
 }
 
+#content-graph,
 .map,
 .bar,
 .line,
-.scatter {
+.scatter,
+.scatter-map {
   background-color: rgba(0, 0, 5, 0.3);
-
   /* height: 800px; */
   border-radius: 20px;
   width: 43vw;

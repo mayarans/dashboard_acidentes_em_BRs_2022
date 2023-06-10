@@ -1,13 +1,13 @@
-from commons.functions_commons import *
-from dash.dependencies import Input, Output, State
-from dash import html
-from dash import dcc
-import dash
-import plotly.express as px
-import pandas as pd
 import json
-import dash_bootstrap_components as dbc
 
+import dash
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+from dash import dcc, html
+from dash.dependencies import Input, Output, State
+
+from commons.functions_commons import *
 
 external_stylesheets = ['assets/app.css']
 app = dash.Dash(__name__, external_stylesheets=[
@@ -30,19 +30,17 @@ app.layout = html.Div([
              'position': 'fixed', 'top': '100px', 'right': '10px', 'zIndex': '9999'}),
     html.Div([
         dcc.Dropdown(id='select_state', options=options_state,
-                     value='BR', className='dropdown'), dcc.RadioItems(id='select-graph', options=[' Dispersão', ' Linha', ' Barra'], value=' Barra', inline=True)], className='dropdown-state-graph'),
+                     value='BR', className='dropdown'), dcc.RadioItems(id='select-graph', options=[' Dispersão', ' Acidentes/Mês', ' Acidentes/Causa', ' Acidentes/Br'], value=' Acidentes/Causa', inline=True)], className='dropdown-state-graph'),
     html.Div(id='input-select-cause',
-             children=[dcc.Dropdown(id='select_cause', options=options_cause, multi=True, value=['Chuva'])]),
+             children=[dcc.Dropdown(placeholder='Selecione as causas...', id='select_cause', options=options_cause, multi=True)]),
     html.Br(),
     html.Div([html.Div(dcc.Graph(id='map', figure={}, className='map')),
-             html.Div(id='graph', children=[dcc.Graph(id='bar')])], className='container')
+             html.Div(id='graph', children=[dcc.Graph(id='content-graph', figure={})])], className='container')
 
 ])
 
 
 # LADO ESQUERDO
-
-
 @app.callback(
     [Output(component_id='map', component_property='figure')],
     [Input(component_id='select_state', component_property='value')]
@@ -61,77 +59,80 @@ def upgrade_map(state_selected):
 @app.callback(
     [Output(component_id='graph', component_property='children')],
     [Input(component_id='select-graph', component_property='value'),
-     Input(component_id='select_state', component_property='value')]
+     Input(component_id='select_state', component_property='value')], State(component_id='select_cause', component_property='value')
 )
-def update_type_graph(graph_selected, state_selected):
+def update_type_graph(graph_selected, state_selected, cause_selected):
     if graph_selected == ' Dispersão':
         fig = scatter_chart(df, state_selected)
         update_layout(fig)
         fig.update_layout(
             legend=dict(
-                orientation="h",
+                orientation="v",
                 entrywidth=70,
                 yanchor="top",
-                y=-0.1,
+                y=-0.3,
                 xanchor="right",
                 x=0.9
             ))
-        return [dcc.Graph(id='scatter', figure=fig, className='scatter')]
-    elif graph_selected == ' Linha':
+        return [dcc.Graph(id='content-graph', figure=fig, className='scatter')]
+    elif graph_selected == ' Acidentes/Mês':
         fig = line_chart(df, state_selected)
         update_layout(fig)
-        return [dcc.Graph(id='line', figure=fig, className='line')]
-    elif graph_selected == ' Barra':
-        fig = bar_chart(df, state_selected, ['Chuva'])
+        return [dcc.Graph(id='content-graph', figure=fig, className='line')]
+    elif graph_selected == ' Acidentes/Causa':
+        fig = bar_chart(df, state_selected, cause_selected)
         update_layout(fig)
         fig.update_layout(
             legend=dict(
-                orientation="h",
+                orientation="v",
                 entrywidth=70,
                 yanchor="top",
                 y=-0.1,
                 xanchor="right",
                 x=0.9
             ))
-        return [dcc.Graph(id='bar', figure=fig, className='bar')]
+        return [dcc.Graph(id='content-graph', figure=fig, className='bar')]
+    elif graph_selected == ' Acidentes/Br':
+        fig = scatter_map(df, state_selected)
+        update_layout(fig)
+        return [dcc.Graph(id='content-graph', figure=fig, className='scatter-map')]
 
 
 @app.callback(
     [Output(component_id='input-select-cause', component_property='children')],
-    [Input(component_id='select-graph', component_property='value')]
+    [Input(component_id='select-graph', component_property='value')],
+    State(component_id='select_cause', component_property='value')
 )
-def show_cause(graph_selected):
-    if graph_selected == ' Barra':
-        return [dcc.Dropdown(id='select_cause', options=options_cause, multi=True,
-                             value=['Chuva'])]
+def show_cause(graph_selected, cause_selected):
+    if graph_selected == ' Acidentes/Causa':
+        return [dcc.Dropdown(placeholder='Selecione as causas...', id='select_cause', options=options_cause, multi=True,
+                             value=cause_selected)]
     else:
-        return [html.Div(style={'width': '0px', 'height': '0px'})]
+        return [dcc.Dropdown(style={'display': 'none',  'width': '0px', 'height': '0px'}, value=cause_selected, id='select_cause')]
 
 
 @app.callback(
-    [Output(component_id='bar', component_property='figure'), Output(
-        component_id='select_cause', component_property='value'), Output(component_id='alert', component_property='children')],
+    [Output(component_id='content-graph', component_property='figure'),
+     Output(component_id='select_cause', component_property='value'),
+     Output(component_id='alert', component_property='children')],
     [Input(component_id='select_cause', component_property='value')],
     prevent_initial_callback=True,
     prevent_initial_call=True
 )
 def upgrade_causes(cause_selected):
-    print('contando')
-    if cause_selected == ['Chuva']:
-        print('aqui')
-        raise dash.exceptions.PreventUpdate
-    print('bo')
+    print(cause_selected)
     max_selected = 3  # Maximum number of selected options allowed
     alerts = html.Div(style={'width': '0px', 'height': '0px'})
-    if len(cause_selected) > max_selected:
-        cause_selected.pop()
-        alerts = dbc.Alert("This is a warning alert... be careful...",
-                           color="warning", duration=4000)
+    if cause_selected is not None:
+        if len(cause_selected) > max_selected:
+            cause_selected.pop()
+            alerts = dbc.Alert(f"Você só pode selecionar {max_selected} causas!",
+                               color="warning", duration=4000)
     fig = bar_chart(df, state, cause_selected)
     update_layout(fig)
     fig.update_layout(
         legend=dict(
-            orientation="h",
+            orientation="v",
             entrywidth=70,
             yanchor="top",
             y=-0.1,

@@ -63,8 +63,9 @@ def create_map(df, state):
         color_continuous_scale='darkmint',
         title=title,
         hover_name=col_key,
-        zoom=2.5 if state == 'BR' else 5,
+        zoom=states_data[state]['zoom'],
         height=600
+
     )
 
 
@@ -192,7 +193,7 @@ def create_scatter_map(df, state):
         mapbox_style='open-street-map',
         color_discrete_sequence=px.colors.qualitative.Prism,
         size='count',
-        zoom=4
+        zoom=states_data[state]['zoom']
     )
 
 
@@ -208,7 +209,8 @@ def subset_df_by_cause_of__accident_and_climate_conditions(df, state, list_of_ca
         ['causa_acidente', 'condicao_metereologica'], as_index=False)['id'].value_counts()
     subset_df = pd.DataFrame(
         subset_df[['causa_acidente', 'condicao_metereologica']]).value_counts().reset_index()
-    subset_df = subset_df[subset_df['causa_acidente'].isin(list_of_causes)]
+    subset_df = subset_df[subset_df['causa_acidente'].isin(
+        list_of_causes)] if list_of_causes else subset_df[subset_df['causa_acidente'] == 'abc']
     subset_df = subset_df.sort_values(['count', 'condicao_metereologica'])
     return subset_df
 
