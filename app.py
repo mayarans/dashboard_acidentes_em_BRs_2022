@@ -68,8 +68,8 @@ app.layout = html.Div([
             dcc.Graph(id='map', figure={}, className='map'))], type="circle"),
         dcc.Loading(children=[html.Div(id='graph', children=[
                     dcc.Graph(id='content-graph', figure={})])], type="graph")
-    ], className='container')
-
+    ], className='container'),
+    html.Br()
 ])
 
 
