@@ -9,7 +9,8 @@ body {
   font-size: 3em;
   text-align: center;
   color: #e8e6e3db;
-  padding: 20px 0px 20px 0px;
+  padding: 30px 0px 30px 0px;
+  font-weight: 700px;
 }
 
 .container {
@@ -20,7 +21,7 @@ body {
 }
 
 .dropdown {
-  margin-left: 60px;
+  margin-left: 65px;
   width: 300px;
 }
 
@@ -36,12 +37,12 @@ body {
 
 .dropdown-state-graph {
   display: flex;
-  gap: 75px;
+  gap: 35px;
 }
 
 #select_cause {
   max-width: 500px;
-  margin-left: 750px;
+  margin-left: 720px;
   border-radius: 4px;
 }
 
